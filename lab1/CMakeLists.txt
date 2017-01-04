@@ -16,6 +16,6 @@ message(STATUS "OpenCL libraries: ${OPENCL_LIBRARIES}")
 
 include_directories( ${OPENCL_INCLUDE_DIRS} )
 
-add_executable(convolution main.cpp)
+add_executable(convolution src/main.cpp)
 target_include_directories (convolution PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries( convolution ${OpenCL_LIBRARY} )
