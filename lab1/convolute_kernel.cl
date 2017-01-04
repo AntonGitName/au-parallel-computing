@@ -1,6 +1,6 @@
 __kernel void convolute(__global const float* a, unsigned n,
-                            __global const float* b, unsigned m,
-                            __global float* res) {
+                        __global const float* b, unsigned m,
+                        __global float* res) {
     int m2 = m / 2;
     size_t row = get_global_id(0);
     size_t col = get_global_id(1);
