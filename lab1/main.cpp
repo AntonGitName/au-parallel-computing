@@ -132,7 +132,7 @@ void calculate_parallel(const floats &matrix, const floats &kernel, size_t n, si
     assert(status == CL_SUCCESS);
 
     auto convolute_kernel = clCreateKernel(program, convolute_function, &status);
-    assert(status == CL_SUCCESS);
+    assert(status == CL_SUCCESS && "Make sure that *.cl file is in the right place");
 
     set_kernel_arg(convolute_kernel, 0, matrix_buffer);
     set_kernel_arg(convolute_kernel, 1, (unsigned) n);

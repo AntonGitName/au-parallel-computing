@@ -1,4 +1,4 @@
-__kernel void convolute_gpu(__global const float* a, unsigned n,
+__kernel void convolute(__global const float* a, unsigned n,
                             __global const float* b, unsigned m,
                             __global float* res) {
     int m2 = m / 2;
