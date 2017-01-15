@@ -4,3 +4,4 @@ project(au_parallel_computing)
 set(CMAKE_CXX_STANDARD 11)
 
 add_subdirectory(lab1)
+add_subdirectory(lab2)
