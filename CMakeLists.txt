@@ -5,3 +5,4 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_subdirectory(lab1)
 add_subdirectory(lab2)
+add_subdirectory(flow-graph)
