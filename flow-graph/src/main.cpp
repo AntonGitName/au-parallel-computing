@@ -1,28 +1,25 @@
-#include <tbb/flow_graph.h>
-
 #include <iostream>
 #include <vector>
 
 #include "ImageProcessor.h"
 
-std::vector<Image> create_images(size_t n) {
-    std::vector<Image> images;
-    for (size_t i = 0; i < n; ++i) {
-        images.push_back(Image(512, 512));
+namespace {
+    void usage(char const *name) {
+        std::cout << "Usage: " << name << " OPTIONS" << std::endl;
+        std::cout << std::endl;
+        std::cout << "OPTIONS:" << std::endl;
+        std::cout << "  -b NUM      brightness value to search for [0..255] " << std::endl;
+        std::cout << "  -l LIMIT    max number of proccessing images at a time" << std::endl;
+        std::cout << "  -f FILE     log file" << std::endl;
     }
-    return images;
-}
 
-void usage(char const *name) {
-    std::cerr << "Usage: " << name;
-    std::cerr << " [-f filename] ";
-    std::cerr << " [-b value] ";
-    std::cerr << " [-l number] ";
-    std::cerr << std::endl << std::endl;
-    std::cerr << "OPTIONS\n";
-    std::cerr << "\t-f filename\t Use it to specify a path where program log with average values will be written (default `flow-graph.log`)." << std::endl;
-    std::cerr << "\t-b value\t Use it to set brightness value that will be searched in image (default `128`)." << std::endl;
-    std::cerr << "\t-l number\t This option sets number of images processed simultaneously (default `4`)." << std::endl;
+    std::vector<Image> create_images(size_t n) {
+        std::vector<Image> images;
+        for (size_t i = 0; i < n; ++i) {
+            images.push_back(Image(512, 512));
+        }
+        return images;
+    }
 }
 
 int main(int argc, char **argv) {
@@ -32,27 +29,25 @@ int main(int argc, char **argv) {
 
     for (int i = 1; i < argc; i += 2) {
         std::string flag = argv[i];
-        std::string value = argv[i + 1];
-        if (flag == "-f") {
-            log_fname = value;
+        if (flag == "-h" || flag == "--help") {
+            usage(argv[0]);
+            return 0;
+        } else if (flag == "-f") {
+            log_fname = argv[i + 1];
+        } else if (flag == "-b") {
+            pixel_to_search = std::stoi(argv[i + 1]);
+        } else if (flag == "-l") {
+            parallel_images = std::stoul(argv[i + 1]);
+        } else {
+            usage(argv[0]);
+            exit(1);
         }
-        if (flag == "-b") {
-            pixel_to_search = std::stoi(value);
-        }
-        if (flag == "-l") {
-            parallel_images = std::stoul(value);
-        }
-
     }
 
     Image::pixel_t brightness = (Image::pixel_t) pixel_to_search;
 
-    if (parallel_images < 0) {
-        usage(argv[0]);
-        return -1;
-    }
-
     ImageProcessor ip(create_images(64), brightness, parallel_images, log_fname);
     ip.process();
+
     return 0;
 }

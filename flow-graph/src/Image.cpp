@@ -4,10 +4,8 @@
 
 #include "Image.h"
 
-Image::Image(size_t w, size_t h) : width(w), height(h), pixels(w * h) {
-    for (size_t i = 0; i < pixels.size(); ++i) {
-        pixels[i] = (pixel_t) rand();
-    }
+Image::Image(size_t w, size_t h) {
+    generate(w, h);
 }
 
 std::vector<Image::pos_t> Image::get_border(size_t pixel_index) const {
@@ -25,16 +23,8 @@ std::vector<Image::pos_t> Image::get_border(size_t pixel_index) const {
     return filtered_border;
 }
 
-std::vector<Image::pixel_t> Image::get_pixels() const {
+const std::vector<Image::pixel_t>& Image::get_pixels() const {
     return pixels;
-}
-
-size_t Image::get_width() const {
-    return width;
-}
-
-size_t Image::get_height() const {
-    return height;
 }
 
 Image::pixel_t Image::invert_pixel(pixel_t c) {
@@ -47,4 +37,13 @@ Image::pixel_t Image::get_pixel(pos_t pos) const {
 
 Image::pixel_t Image::get_pixel(size_t pos) const {
     return pixels[pos];
+}
+
+void Image::generate(size_t w, size_t h) {
+    width = w;
+    height = h;
+    pixels.assign(w * h, 0);
+    for (size_t i = 0; i < pixels.size(); ++i) {
+        pixels[i] = (pixel_t) rand();
+    }
 }

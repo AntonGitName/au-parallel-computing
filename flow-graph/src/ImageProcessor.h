@@ -9,24 +9,30 @@
 
 #include <string>
 #include <vector>
+#include <numeric>
 #include <algorithm>
 #include <fstream>
 #include <ostream>
 #include <iostream>
+#include <memory>
 
 #include "Image.h"
 
 class ImageProcessor {
 public:
-    ImageProcessor(const std::vector<Image>& images, char pixel_value, size_t image_parallel,
+    ImageProcessor(const std::vector<Image>& images, Image::pixel_t pixel_value, size_t image_parallel,
                    std::string log_fname);
     void process();
 private:
+    size_t generated_images = 0;
+
     std::vector<Image> images;
-    size_t added_images = 0;
     tbb::flow::graph flow_graph;
     std::ofstream average_pixel_log;
-    std::shared_ptr<tbb::flow::source_node<Image>> source_ptr;
+    std::shared_ptr<tbb::flow::source_node<Image>> source_generation_node;
+
+    // we do not need those pointers, but we want to delay destructors call of graph nodes...
+    std::vector<std::shared_ptr<tbb::flow::graph_node>> nodes;
 };
 
 

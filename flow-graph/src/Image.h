@@ -18,11 +18,10 @@ public:
 
     Image(size_t w = 0, size_t h = 0);
     std::vector<pos_t> get_border(size_t pixel_index) const;
-    std::vector<pixel_t> get_pixels() const;
+    const std::vector<pixel_t>& get_pixels() const;
     pixel_t get_pixel(pos_t pos) const;
     pixel_t get_pixel(size_t pos) const;
-    size_t get_width() const;
-    size_t get_height() const;
+    void generate(size_t w, size_t h);
 
     static pixel_t invert_pixel(pixel_t c);
 private:
