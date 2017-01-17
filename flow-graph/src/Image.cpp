@@ -4,7 +4,7 @@
 
 #include "Image.h"
 
-Image::Image(size_t w, size_t h) {
+Image::Image(size_t w, size_t h) : id((size_t) rand()){
     generate(w, h);
 }
 
@@ -46,4 +46,8 @@ void Image::generate(size_t w, size_t h) {
     for (size_t i = 0; i < pixels.size(); ++i) {
         pixels[i] = (pixel_t) rand();
     }
+}
+
+size_t Image::get_id() const {
+    return id;
 }

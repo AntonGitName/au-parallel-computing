@@ -46,6 +46,10 @@ namespace {
         }
         return result;
     }
+
+    size_t get_job_id(f_node_result_t node_result) {
+        return node_result.first.get_id();
+    }
 }
 
 void ImageProcessor::process() {
@@ -58,6 +62,7 @@ ImageProcessor::ImageProcessor(const vector<Image> &images,
                                size_t image_parallel,
                                std::string log_fname)
         : pixel_to_search(pixel_value), images(images), average_pixel_log(log_fname) {
+
     auto source_f = [&](Image &image) {
         image = this->images[generated_images++];
         return generated_images < this->images.size();
@@ -120,9 +125,11 @@ ImageProcessor::ImageProcessor(const vector<Image> &images,
     auto max_node = make_shared<function_node<Image, f_node_result_t> >(flow_graph, serial, max_pixel_f);
     auto min_node = make_shared<function_node<Image, f_node_result_t> >(flow_graph, serial, min_pixel_f);
     auto search_node = make_shared<function_node<Image, f_node_result_t> >(flow_graph, serial, search_pixel_f);
-    auto first_stage_joiner_node = make_shared<join_node<first_stage_tuple> >(flow_graph);
+    auto first_stage_joiner_node = make_shared<join_node<first_stage_tuple, key_matching<size_t> > >(flow_graph,
+                                                                                                     get_job_id,
+                                                                                                     get_job_id,
+                                                                                                     get_job_id);
     auto first_stage_broadcast_node = make_shared<broadcast_node<first_stage_tuple> >(flow_graph);
-
 
     // stage 2
     auto invert_border_node = make_shared<function_node<first_stage_tuple, bool> >(flow_graph, unlimited,

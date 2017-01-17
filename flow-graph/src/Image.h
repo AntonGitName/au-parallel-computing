@@ -31,7 +31,11 @@ public:
 
     static pixel_t invert_pixel(pixel_t c);
 
+    size_t get_id() const;
+
 private:
+    size_t id;
+
     size_t width;
     size_t height;
     std::vector<pixel_t> pixels;
