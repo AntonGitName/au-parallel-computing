@@ -5,12 +5,15 @@
 
 namespace {
     void usage(char const *name) {
-        std::cout << "Usage: " << name << " OPTIONS" << std::endl;
-        std::cout << std::endl;
-        std::cout << "OPTIONS:" << std::endl;
-        std::cout << "  -b NUM      brightness value to search for [0..255] " << std::endl;
-        std::cout << "  -l LIMIT    max number of proccessing images at a time" << std::endl;
-        std::cout << "  -f FILE     log file" << std::endl;
+        std::cout << "Usage: " << name;
+        std::cout << " [-f filename] ";
+        std::cout << " [-b value] ";
+        std::cout << " [-l number] ";
+        std::cout << std::endl << std::endl;
+        std::cout << "OPTIONS\n";
+        std::cout << "\t-f filename\t Use it to specify a path where program log with average values will be written (default `flow-graph.log`)." << std::endl;
+        std::cout << "\t-b value\t Use it to set brightness value that will be searched in image (default `128`)." << std::endl;
+        std::cout << "\t-l number\t This option sets number of images processed simultaneously (default `4`)." << std::endl;
     }
 
     std::vector<Image> create_images(size_t n) {
@@ -44,7 +47,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    ImageProcessor ip(create_images(64), (pixel_t) pixel_to_search, parallel_images, log_fname);
+    ImageProcessor ip(create_images(100), (pixel_t) pixel_to_search, parallel_images, log_fname);
     ip.process();
 
     return 0;

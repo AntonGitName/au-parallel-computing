@@ -23,7 +23,7 @@ std::vector<Image::pos_t> Image::get_border(size_t pixel_index) const {
     return filtered_border;
 }
 
-const std::vector<pixel_t>& Image::get_pixels() const {
+const std::vector<pixel_t> &Image::get_pixels() const {
     return pixels;
 }
 

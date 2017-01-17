@@ -18,13 +18,19 @@ public:
     typedef std::pair<int, int> pos_t;
 
     Image(size_t w = 0, size_t h = 0);
+
     std::vector<pos_t> get_border(size_t pixel_index) const;
-    const std::vector<pixel_t>& get_pixels() const;
+
+    const std::vector<pixel_t> &get_pixels() const;
+
     pixel_t get_pixel(pos_t pos) const;
+
     pixel_t get_pixel(size_t pos) const;
+
     void generate(size_t w, size_t h);
 
     static pixel_t invert_pixel(pixel_t c);
+
 private:
     size_t width;
     size_t height;

@@ -20,9 +20,11 @@
 
 class ImageProcessor {
 public:
-    ImageProcessor(const std::vector<Image>& images, pixel_t pixel_value, size_t image_parallel,
+    ImageProcessor(const std::vector<Image> &images, pixel_t pixel_value, size_t image_parallel,
                    std::string log_fname);
+
     void process();
+
 private:
     size_t generated_images = 0;
 

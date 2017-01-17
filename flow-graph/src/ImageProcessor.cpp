@@ -57,9 +57,7 @@ ImageProcessor::ImageProcessor(const vector<Image> &images,
                                pixel_t pixel_value,
                                size_t image_parallel,
                                std::string log_fname)
-        : pixel_to_search(pixel_value)
-        , images(images)
-        , average_pixel_log(log_fname) {
+        : pixel_to_search(pixel_value), images(images), average_pixel_log(log_fname) {
     auto source_f = [&](Image &image) {
         image = this->images[generated_images++];
         return generated_images < this->images.size();
@@ -102,14 +100,14 @@ ImageProcessor::ImageProcessor(const vector<Image> &images,
         std::copy(r.begin(), r.end(), std::back_inserter(selected_pixels));
 
         size_t value = std::accumulate<vector<pixel_t>::iterator, size_t>(selected_pixels.begin(),
-                                                                                      selected_pixels.end(), 0);
+                                                                          selected_pixels.end(), 0);
 
         average_pixel_log << (value / selected_pixels.size()) << std::endl;
 
         return true;
     };
 
-    auto stub_continue = []( const second_stage_tuple&) { return continue_msg(); };
+    auto stub_continue = [](const second_stage_tuple &) { return continue_msg(); };
 
     /* vertices */
 
@@ -127,12 +125,15 @@ ImageProcessor::ImageProcessor(const vector<Image> &images,
 
 
     // stage 2
-    auto invert_border_node = make_shared<function_node<first_stage_tuple, bool> >(flow_graph, unlimited, invert_selected_f);
-    auto calc_average_node = make_shared<function_node<first_stage_tuple, bool> >(flow_graph, unlimited, average_selected_f);
+    auto invert_border_node = make_shared<function_node<first_stage_tuple, bool> >(flow_graph, unlimited,
+                                                                                   invert_selected_f);
+    auto calc_average_node = make_shared<function_node<first_stage_tuple, bool> >(flow_graph, unlimited,
+                                                                                  average_selected_f);
     auto second_stage_joiner_node = make_shared<join_node<second_stage_tuple> >(flow_graph);
 
     // update limiter
-    auto decrement_limiter_node = make_shared<function_node<second_stage_tuple, continue_msg> >(flow_graph, unlimited, stub_continue);
+    auto decrement_limiter_node = make_shared<function_node<second_stage_tuple, continue_msg> >(flow_graph, unlimited,
+                                                                                                stub_continue);
 
     /* edges */
 
