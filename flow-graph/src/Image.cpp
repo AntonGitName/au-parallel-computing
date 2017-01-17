@@ -23,19 +23,19 @@ std::vector<Image::pos_t> Image::get_border(size_t pixel_index) const {
     return filtered_border;
 }
 
-const std::vector<Image::pixel_t>& Image::get_pixels() const {
+const std::vector<pixel_t>& Image::get_pixels() const {
     return pixels;
 }
 
-Image::pixel_t Image::invert_pixel(pixel_t c) {
+pixel_t Image::invert_pixel(pixel_t c) {
     return std::numeric_limits<pixel_t>::max() - c;
 }
 
-Image::pixel_t Image::get_pixel(pos_t pos) const {
+pixel_t Image::get_pixel(pos_t pos) const {
     return pixels[pos.first * width + pos.second];
 }
 
-Image::pixel_t Image::get_pixel(size_t pos) const {
+pixel_t Image::get_pixel(size_t pos) const {
     return pixels[pos];
 }
 

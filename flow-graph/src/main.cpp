@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
         std::string flag = argv[i];
         if (flag == "-h" || flag == "--help") {
             usage(argv[0]);
-            return 0;
+            exit(0);
         } else if (flag == "-f") {
             log_fname = argv[i + 1];
         } else if (flag == "-b") {
@@ -44,9 +44,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    Image::pixel_t brightness = (Image::pixel_t) pixel_to_search;
-
-    ImageProcessor ip(create_images(64), brightness, parallel_images, log_fname);
+    ImageProcessor ip(create_images(64), (pixel_t) pixel_to_search, parallel_images, log_fname);
     ip.process();
 
     return 0;

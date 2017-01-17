@@ -12,8 +12,9 @@ namespace {
 
     typedef std::pair<Image, vector<size_t> > f_node_result_t;
     typedef tuple<f_node_result_t, f_node_result_t, f_node_result_t> first_stage_tuple;
+    typedef tuple<bool, bool> second_stage_tuple;
 
-    vector<size_t> get_indices(const Image &image, char pixel_value) {
+    vector<size_t> get_indices(const Image &image, pixel_t pixel_value) {
         vector<size_t> result;
         for (size_t i = 0; i < image.get_pixels().size(); ++i) {
             if (image.get_pixels()[i] == pixel_value) {
@@ -38,8 +39,8 @@ namespace {
         }
     }
 
-    vector<Image::pixel_t> get_selected_pixels(f_node_result_t holder) {
-        vector<Image::pixel_t> result;
+    vector<pixel_t> get_selected_pixels(f_node_result_t holder) {
+        vector<pixel_t> result;
         for (auto x : holder.second) {
             result.push_back(holder.first.get_pixel(x));
         }
@@ -52,8 +53,13 @@ void ImageProcessor::process() {
     flow_graph.wait_for_all();
 }
 
-ImageProcessor::ImageProcessor(const vector<Image> &images, Image::pixel_t pixel_value, size_t image_parallel,
-                               std::string log_fname) : images(images), average_pixel_log(log_fname) {
+ImageProcessor::ImageProcessor(const vector<Image> &images,
+                               pixel_t pixel_value,
+                               size_t image_parallel,
+                               std::string log_fname)
+        : pixel_to_search(pixel_value)
+        , images(images)
+        , average_pixel_log(log_fname) {
     auto source_f = [&](Image &image) {
         image = this->images[generated_images++];
         return generated_images < this->images.size();
@@ -68,8 +74,8 @@ ImageProcessor::ImageProcessor(const vector<Image> &images, Image::pixel_t pixel
         return std::make_pair(image, get_indices(image, min));
     };
 
-    auto search_pixel_f = [&pixel_value](const Image &image) {
-        return std::make_pair(image, get_indices(image, pixel_value));
+    auto search_pixel_f = [&](const Image &image) {
+        return std::make_pair(image, get_indices(image, pixel_to_search));
     };
 
     auto invert_selected_f = [](const first_stage_tuple &tuple) {
@@ -82,7 +88,7 @@ ImageProcessor::ImageProcessor(const vector<Image> &images, Image::pixel_t pixel
 
     auto average_selected_f = [&](first_stage_tuple const &t) {
 
-        vector<Image::pixel_t> selected_pixels;
+        vector<pixel_t> selected_pixels;
         auto image_with_selected_pixels = get<0>(t);
         auto r = get_selected_pixels(image_with_selected_pixels);
         std::copy(r.begin(), r.end(), std::back_inserter(selected_pixels));
@@ -95,16 +101,15 @@ ImageProcessor::ImageProcessor(const vector<Image> &images, Image::pixel_t pixel
         r = get_selected_pixels(image_with_selected_pixels);
         std::copy(r.begin(), r.end(), std::back_inserter(selected_pixels));
 
-        size_t value = std::accumulate<vector<Image::pixel_t>::iterator, size_t>(selected_pixels.begin(),
+        size_t value = std::accumulate<vector<pixel_t>::iterator, size_t>(selected_pixels.begin(),
                                                                                       selected_pixels.end(), 0);
-        Image::pixel_t average_value = (Image::pixel_t) (value / selected_pixels.size());
 
-        average_pixel_log << average_value << std::endl;
+        average_pixel_log << (value / selected_pixels.size()) << std::endl;
 
         return true;
     };
 
-    auto stub_continue = [](tuple<bool, bool> const &t) { return continue_msg(); };
+    auto stub_continue = []( const second_stage_tuple&) { return continue_msg(); };
 
     /* vertices */
 
@@ -114,20 +119,20 @@ ImageProcessor::ImageProcessor(const vector<Image> &images, Image::pixel_t pixel
     auto input_broadcast_node = make_shared<broadcast_node<Image> >(flow_graph);
 
     // stage 1
-    auto max_node = make_shared<function_node<Image, f_node_result_t> >(flow_graph, 1, max_pixel_f);
-    auto min_node = make_shared<function_node<Image, f_node_result_t> >(flow_graph, 1, min_pixel_f);
-    auto search_node = make_shared<function_node<Image, f_node_result_t> >(flow_graph, 1, search_pixel_f);
-    auto stage1_joiner_node = make_shared<join_node<first_stage_tuple> >(flow_graph);
-    auto stage1_broadcast_node = make_shared<broadcast_node<first_stage_tuple> >(flow_graph);
+    auto max_node = make_shared<function_node<Image, f_node_result_t> >(flow_graph, serial, max_pixel_f);
+    auto min_node = make_shared<function_node<Image, f_node_result_t> >(flow_graph, serial, min_pixel_f);
+    auto search_node = make_shared<function_node<Image, f_node_result_t> >(flow_graph, serial, search_pixel_f);
+    auto first_stage_joiner_node = make_shared<join_node<first_stage_tuple> >(flow_graph);
+    auto first_stage_broadcast_node = make_shared<broadcast_node<first_stage_tuple> >(flow_graph);
 
 
     // stage 2
     auto invert_border_node = make_shared<function_node<first_stage_tuple, bool> >(flow_graph, unlimited, invert_selected_f);
     auto calc_average_node = make_shared<function_node<first_stage_tuple, bool> >(flow_graph, unlimited, average_selected_f);
-    auto stage2_joiner_node = make_shared<join_node<tuple<bool, bool> > >(flow_graph);
+    auto second_stage_joiner_node = make_shared<join_node<second_stage_tuple> >(flow_graph);
 
     // update limiter
-    auto decrement = make_shared<function_node<tuple<bool, bool>, continue_msg> >(flow_graph, unlimited, stub_continue);
+    auto decrement_limiter_node = make_shared<function_node<second_stage_tuple, continue_msg> >(flow_graph, unlimited, stub_continue);
 
     /* edges */
 
@@ -139,24 +144,25 @@ ImageProcessor::ImageProcessor(const vector<Image> &images, Image::pixel_t pixel
     make_edge(*input_broadcast_node, *max_node);
     make_edge(*input_broadcast_node, *search_node);
     make_edge(*input_broadcast_node, *min_node);
-    make_edge(*max_node, input_port<0>(*stage1_joiner_node));
-    make_edge(*search_node, input_port<1>(*stage1_joiner_node));
-    make_edge(*min_node, input_port<2>(*stage1_joiner_node));
-    make_edge(*stage1_joiner_node, *stage1_broadcast_node);
+    make_edge(*max_node, input_port<0>(*first_stage_joiner_node));
+    make_edge(*search_node, input_port<1>(*first_stage_joiner_node));
+    make_edge(*min_node, input_port<2>(*first_stage_joiner_node));
+    make_edge(*first_stage_joiner_node, *first_stage_broadcast_node);
 
     // stage 2
-    make_edge(*stage1_broadcast_node, *invert_border_node);
-    make_edge(*stage1_broadcast_node, *calc_average_node);
-    make_edge(*invert_border_node, input_port<0>(*stage2_joiner_node));
-    make_edge(*calc_average_node, input_port<1>(*stage2_joiner_node));
+    make_edge(*first_stage_broadcast_node, *invert_border_node);
+    make_edge(*first_stage_broadcast_node, *calc_average_node);
+    make_edge(*invert_border_node, input_port<0>(*second_stage_joiner_node));
+    make_edge(*calc_average_node, input_port<1>(*second_stage_joiner_node));
 
     // decrement
-    make_edge(*stage2_joiner_node, *decrement);
-    make_edge(*decrement, limiter->decrement);
+    make_edge(*second_stage_joiner_node, *decrement_limiter_node);
+    make_edge(*decrement_limiter_node, limiter->decrement);
 
     nodes = {
             source_generation_node, limiter, input_broadcast_node, max_node, min_node, search_node,
-            stage1_joiner_node, stage1_broadcast_node, invert_border_node, calc_average_node, stage2_joiner_node, decrement
+            first_stage_joiner_node, first_stage_broadcast_node, invert_border_node, calc_average_node,
+            second_stage_joiner_node, decrement_limiter_node
     };
 }
 

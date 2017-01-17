@@ -11,9 +11,10 @@
 #include <iterator>
 #include <limits>
 
+typedef unsigned char pixel_t;
+
 class Image {
 public:
-    typedef unsigned char pixel_t;
     typedef std::pair<int, int> pos_t;
 
     Image(size_t w = 0, size_t h = 0);
